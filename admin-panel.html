@@ -238,19 +238,55 @@
             }
         }
 
-        // دالة حفظ القراءة الحالية
+        // دالة حفظ القراءة الحالية وإرسالها لفايربيس
         function saveReading(meterId, fuelTypeId, price, lastReading) {
-            const currentReading = parseFloat(document.getElementById(`input-${meterId}`).value);
+            const inputField = document.getElementById(`input-${meterId}`);
+            const currentReading = parseFloat(inputField.value);
             
             if (!currentReading || currentReading <= lastReading) {
-                alert("يرجى إدخال قراءة صحيحة (يجب أن تكون أكبر من قراءة الأمس).");
+                alert("❌ يرجى إدخال قراءة صحيحة (يجب أن تكون أكبر من قراءة الأمس).");
                 return;
             }
 
+            // حساب القيم
             const soldQty = currentReading - lastReading;
-            const total = soldQty * price;
+            const totalAmount = soldQty * price;
+            const timestamp = Date.now();
             
-            alert(`تم حساب الفارق: ${soldQty} لتر\nالقيمة الإجمالية: ${total} ل.س\n(سيتم استكمال برمجة الإرسال لفايربيس في الخطوة القادمة)`);
+            // استخراج تاريخ اليوم بصيغة YYYY-MM-DD لتنظيم السجلات
+            const today = new Date().toISOString().split('T')[0];
+
+            // تجهيز حزمة البيانات للإرسال دفعة واحدة (Atomic Update)
+            const updates = {};
+            
+            // 1. إنشاء سجل الفاتورة في قسم (المبيعات اليومية)
+            const logId = db.ref().child(`daily_logs/${today}/${meterId}`).push().key; 
+            updates[`daily_logs/${today}/${meterId}/${logId}`] = {
+                start_reading: lastReading,
+                end_reading: currentReading,
+                quantity_sold: soldQty,
+                price_at_sale: price,
+                total_amount: totalAmount,
+                timestamp: timestamp,
+                fuel_type_id: fuelTypeId
+            };
+
+            // 2. تحديث القراءة الحالية للعداد ليتم استخدامها كقراءة سابقة غداً
+            updates[`meters/${meterId}/last_reading`] = currentReading;
+            updates[`meters/${meterId}/last_updated`] = timestamp;
+
+            // إرسال البيانات إلى فايربيس
+            db.ref().update(updates)
+                .then(() => {
+                    alert(`✅ تم حفظ المبيعات بنجاح!\nالكمية المباعة: ${soldQty} لتر\nالإجمالي: ${totalAmount} ل.س`);
+                    
+                    // مسح حقل الإدخال وإعادة تحميل الشاشة بالبيانات الجديدة
+                    inputField.value = '';
+                    initializeData(); 
+                })
+                .catch((error) => {
+                    alert("❌ حدث خطأ أثناء الاتصال بقاعدة البيانات: " + error.message);
+                });
         }
 
         // تسجيل الخروج
