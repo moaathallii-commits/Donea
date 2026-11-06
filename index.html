@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>محطة دنيا - تسجيل الدخول</title>
+    <style>
+        /* إعدادات الألوان مستوحاة من شعار دنيا */
+        :root {
+            --bg-color: #1a222e; /* كحلي داكن */
+            --primary-orange: #f26f22; /* برتقالي الـ S */
+            --primary-blue: #1c75bc; /* أزرق الـ S */
+            --text-light: #ffffff;
+            --input-bg: #2a3545;
+            --error-color: #e63946;
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-light);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .login-container {
+            background: linear-gradient(145deg, #1f2a38, #161d27);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .logo-container {
+            margin-bottom: 30px;
+        }
+
+        .logo-container img {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            text-align: right;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: #a0aec0;
+        }
+
+        select, input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid transparent;
+            border-radius: 10px;
+            background-color: var(--input-bg);
+            color: var(--text-light);
+            font-size: 16px;
+            outline: none;
+            transition: 0.3s ease;
+        }
+
+        select:focus, input:focus {
+            border-color: var(--primary-blue);
+        }
+
+        .password-wrapper {
+            position: relative;
+        }
+
+        .toggle-password {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #a0aec0;
+            user-select: none;
+        }
+
+        button {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            background: linear-gradient(45deg, var(--primary-orange), #ff4d4d);
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(242, 111, 34, 0.4);
+        }
+
+        button:disabled {
+            background: #555;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        #message {
+            margin-top: 15px;
+            font-size: 14px;
+            color: var(--error-color);
+            min-height: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-container">
+        <div class="logo-container">
+            <!-- استدعاء صورة الشعار -->
+            <img src="1000065786.png" alt="محطة دنيا">
+        </div>
+        
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="role">اختر الصلاحية</label>
+                <select id="role" required>
+                    <option value="admin">أمين المحطة (البيع والإدارة)</option>
+                    <option value="owner">المالك (قراءة التقارير)</option>
+                </select>
+            </div>
+
+            <div class="form-group password-wrapper">
+                <label for="password">كلمة المرور</label>
+                <input type="password" id="password" required placeholder="أدخل كلمة المرور هنا">
+                <span class="toggle-password" onclick="togglePassword()">👁️</span>
+            </div>
+
+            <button type="submit" id="loginBtn">تسجيل الدخول</button>
+            <div id="message"></div>
+        </form>
+    </div>
+
+    <script>
+        // إعدادات الحماية
+        const MAX_ATTEMPTS = 5;
+        const LOCKOUT_TIME = 15 * 60 * 1000; // 15 دقيقة بالملي ثانية
+
+        // الصلاحيات وكلمات المرور (مؤقتاً في الواجهة لتجربة GitHub Pages، لاحقاً تُنقل لـ Firebase)
+        const credentials = {
+            owner: "Donea$$12345678",
+            admin: "Donea$$123456789"
+        };
+
+        const form = document.getElementById('loginForm');
+        const messageEl = document.getElementById('message');
+        const loginBtn = document.getElementById('loginBtn');
+
+        // دالة إظهار/إخفاء كلمة المرور
+        function togglePassword() {
+            const pwdInput = document.getElementById('password');
+            if (pwdInput.type === "password") {
+                pwdInput.type = "text";
+            } else {
+                pwdInput.type = "password";
+            }
+        }
+
+        // التحقق من حالة القفل عند تحميل الصفحة
+        function checkLockout() {
+            const lockoutUntil = localStorage.getItem('lockoutUntil');
+            if (lockoutUntil && Date.now() < parseInt(lockoutUntil)) {
+                const remainingMinutes = Math.ceil((parseInt(lockoutUntil) - Date.now()) / 60000);
+                disableLogin(`تم قفل الدخول مؤقتاً. حاول بعد ${remainingMinutes} دقيقة.`);
+                return true;
+            } else if (lockoutUntil) {
+                // انتهت مدة القفل
+                localStorage.removeItem('lockoutUntil');
+                localStorage.setItem('loginAttempts', 0);
+            }
+            return false;
+        }
+
+        function disableLogin(msg) {
+            loginBtn.disabled = true;
+            messageEl.style.color = "var(--error-color)";
+            messageEl.innerText = msg;
+        }
+
+        checkLockout();
+
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            if (checkLockout()) return;
+
+            const role = document.getElementById('role').value;
+            const password = document.getElementById('password').value;
+            let attempts = parseInt(localStorage.getItem('loginAttempts') || 0);
+
+            if (password === credentials[role]) {
+                // نجاح الدخول
+                localStorage.setItem('loginAttempts', 0);
+                localStorage.setItem('userRole', role); // حفظ الصلاحية للجلسة
+                
+                messageEl.style.color = "#4ade80"; // أخضر
+                messageEl.innerText = "جاري تسجيل الدخول...";
+                
+                // التوجيه بناءً على الصلاحية
+                setTimeout(() => {
+                    if (role === 'owner') {
+                        window.location.href = 'owner-dashboard.html';
+                    } else {
+                        window.location.href = 'admin-panel.html';
+                    }
+                }, 1000);
+
+            } else {
+                // فشل الدخول
+                attempts++;
+                localStorage.setItem('loginAttempts', attempts);
+                
+                if (attempts >= MAX_ATTEMPTS) {
+                    const lockTime = Date.now() + LOCKOUT_TIME;
+                    localStorage.setItem('lockoutUntil', lockTime);
+                    disableLogin("تجاوزت الحد المسموح. تم قفل النظام لمدة 15 دقيقة.");
+                } else {
+                    messageEl.style.color = "var(--error-color)";
+                    messageEl.innerText = `كلمة المرور غير صحيحة. المحاولات المتبقية: ${MAX_ATTEMPTS - attempts}`;
+                }
+            }
+        });
+    </script>
+</body>
+</html>
