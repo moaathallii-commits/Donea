@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>محطة دنيا - لوحة أمين المحطة</title>
+    <!-- استدعاء مكتبات فايربيس الأساسية وقاعدة البيانات -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    
+    <style>
+        :root {
+            --bg-color: #1a222e;
+            --card-bg: #2a3545;
+            --primary-orange: #f26f22;
+            --primary-blue: #1c75bc;
+            --text-light: #ffffff;
+            --success-color: #4ade80;
+            --error-color: #e63946;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-light);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--primary-blue);
+            padding-bottom: 15px;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 24px;
+            color: var(--primary-orange);
+        }
+
+        .logout-btn {
+            background: #e63946;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .meters-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .meter-card {
+            background-color: var(--card-bg);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            border-top: 4px solid var(--primary-blue);
+        }
+
+        .meter-title {
+            font-size: 20px;
+            margin-bottom: 10px;
+            color: var(--primary-blue);
+            font-weight: bold;
+        }
+
+        .meter-info {
+            background: #1f2a38;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 14px;
+            color: #a0aec0;
+        }
+
+        .meter-info span {
+            color: white;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: var(--primary-orange);
+            font-weight: bold;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 12px;
+            border-radius: 8px;
+            border: 2px solid #1f2a38;
+            background: #1f2a38;
+            color: white;
+            font-size: 18px;
+            outline: none;
+        }
+
+        .input-group input:focus {
+            border-color: var(--primary-orange);
+        }
+
+        .save-btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(45deg, var(--primary-blue), #258ad9);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        #status-message {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 16px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>محطة دنيا - الإدخال اليومي</h1>
+        <button class="logout-btn" onclick="logout()">خروج</button>
+    </div>
+
+    <div id="status-message">جاري الاتصال بالنظام والتحقق من البيانات...</div>
+
+    <div class="meters-container" id="meters-container">
+        <!-- سيتم رسم العدادات هنا برمجياً -->
+    </div>
+
+    <script>
+        // التحقق من الجلسة لمنع الدخول غير المصرح به
+        if(localStorage.getItem('userRole') !== 'admin') {
+            window.location.href = 'index.html'; 
+        }
+
+        // إعدادات فايربيس الخاصة بمشروعك
+        const firebaseConfig = {
+          apiKey: "AIzaSyBRCEBXzSNr6Pb2YGJlHcf70sM16QVAbhI",
+          authDomain: "donea-d13db.firebaseapp.com",
+          databaseURL: "https://donea-d13db-default-rtdb.firebaseio.com",
+          projectId: "donea-d13db",
+          storageBucket: "donea-d13db.firebasestorage.app",
+          messagingSenderId: "797815045696",
+          appId: "1:797815045696:web:f177acddbf214ca10569a5"
+        };
+
+        // تهيئة فايربيس
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        // البيانات الافتراضية للتأسيس التلقائي
+        const defaultData = {
+            settings: {
+                fuel_types: {
+                    gasoline: { name: "بنزين", current_price: 15000 },
+                    diesel_1: { name: "مازوت نوع أول", current_price: 12000 },
+                    diesel_heating: { name: "مازوت تدفئة", current_price: 10000 }
+                }
+            },
+            meters: {
+                meter_01: { fuel_type_id: "diesel_1", name: "مضخة المازوت رقم 1", last_reading: 4286 },
+                meter_02: { fuel_type_id: "gasoline", name: "مضخة البنزين رقم 1", last_reading: 1500 }
+            }
+        };
+
+        const statusMsg = document.getElementById('status-message');
+        const metersContainer = document.getElementById('meters-container');
+
+        // دالة التهيئة وجلب البيانات
+        function initializeData() {
+            db.ref('/').once('value').then((snapshot) => {
+                if (!snapshot.exists() || !snapshot.hasChild('settings')) {
+                    statusMsg.style.color = "var(--primary-orange)";
+                    statusMsg.innerText = "جاري بناء هيكلية البيانات لأول مرة...";
+                    
+                    // ضخ البيانات الافتراضية
+                    db.ref('/').set(defaultData).then(() => {
+                        statusMsg.style.color = "var(--success-color)";
+                        statusMsg.innerText = "تم تهيئة النظام بنجاح!";
+                        renderMeters(defaultData.meters, defaultData.settings.fuel_types);
+                    });
+                } else {
+                    statusMsg.style.color = "var(--success-color)";
+                    statusMsg.innerText = "النظام متصل وجاهز.";
+                    const data = snapshot.val();
+                    renderMeters(data.meters, data.settings.fuel_types);
+                }
+            }).catch((error) => {
+                statusMsg.style.color = "var(--error-color)";
+                statusMsg.innerText = "خطأ في الاتصال بقاعدة البيانات.";
+                console.error(error);
+            });
+        }
+
+        // رسم العدادات في الواجهة
+        function renderMeters(meters, fuelTypes) {
+            metersContainer.innerHTML = ''; 
+
+            for (const [meterId, meterData] of Object.entries(meters)) {
+                const fuelType = fuelTypes[meterData.fuel_type_id];
+                
+                const card = document.createElement('div');
+                card.className = 'meter-card';
+                card.innerHTML = `
+                    <div class="meter-title">${meterData.name}</div>
+                    <div class="meter-info">
+                        نوع المادة: <span>${fuelType.name}</span><br>
+                        سعر اللتر المعتمد: <span>${fuelType.current_price} ل.س</span><br>
+                        قراءة الأمس (نقطة البداية): <span id="last-${meterId}">${meterData.last_reading}</span>
+                    </div>
+                    <div class="input-group">
+                        <label>أدخل القراءة الحالية:</label>
+                        <input type="number" id="input-${meterId}" placeholder="مثال: ${meterData.last_reading + 500}">
+                    </div>
+                    <button class="save-btn" onclick="saveReading('${meterId}', '${meterData.fuel_type_id}', ${fuelType.current_price}, ${meterData.last_reading})">حفظ القراءة</button>
+                `;
+                metersContainer.appendChild(card);
+            }
+        }
+
+        // دالة حفظ القراءة الحالية
+        function saveReading(meterId, fuelTypeId, price, lastReading) {
+            const currentReading = parseFloat(document.getElementById(`input-${meterId}`).value);
+            
+            if (!currentReading || currentReading <= lastReading) {
+                alert("يرجى إدخال قراءة صحيحة (يجب أن تكون أكبر من قراءة الأمس).");
+                return;
+            }
+
+            const soldQty = currentReading - lastReading;
+            const total = soldQty * price;
+            
+            alert(`تم حساب الفارق: ${soldQty} لتر\nالقيمة الإجمالية: ${total} ل.س\n(سيتم استكمال برمجة الإرسال لفايربيس في الخطوة القادمة)`);
+        }
+
+        // تسجيل الخروج
+        function logout() {
+            localStorage.removeItem('userRole');
+            window.location.href = 'index.html';
+        }
+
+        // بدء التشغيل فور تحميل الصفحة
+        initializeData();
+    </script>
+</body>
+</html>
