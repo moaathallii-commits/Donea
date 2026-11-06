@@ -4,206 +4,83 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>محطة دنيا - لوحة المالك</title>
-    
-    <!-- مكتبات فايربيس -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-    
-    <!-- مكتبة تحويل HTML إلى PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     
     <style>
-        :root {
-            --bg-color: #1a222e;
-            --card-bg: #2a3545;
-            --primary-orange: #f26f22;
-            --primary-blue: #1c75bc;
-            --text-light: #ffffff;
-            --success-color: #4ade80;
-        }
-
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-light);
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
-            padding: 20px;
-        }
-
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 2px solid var(--primary-blue);
-            padding-bottom: 15px;
-            margin-bottom: 20px;
-        }
-
-        .header h1 {
-            margin: 0;
-            font-size: 24px;
-            color: var(--primary-orange);
-        }
-
-        .controls {
-            display: flex;
-            gap: 10px;
-        }
-
-        .btn {
-            padding: 8px 15px;
-            border-radius: 8px;
-            border: none;
-            color: white;
-            font-weight: bold;
-            cursor: pointer;
-            font-size: 14px;
-        }
-
+        :root { --bg-color: #1a222e; --primary-orange: #f26f22; --primary-blue: #1c75bc; --text-light: #ffffff; }
+        body { background-color: var(--bg-color); color: var(--text-light); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; }
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--primary-blue); padding-bottom: 15px; margin-bottom: 20px; }
+        .header h1 { margin: 0; font-size: 22px; color: var(--primary-orange); }
+        .controls { display: flex; gap: 10px; align-items: center; }
+        select { padding: 10px; border-radius: 8px; font-weight: bold; background: #2a3545; color: white; border: 1px solid var(--primary-blue); outline: none; }
+        .btn { padding: 10px 15px; border-radius: 8px; border: none; color: white; font-weight: bold; cursor: pointer; }
         .btn-pdf { background: var(--primary-blue); }
         .btn-logout { background: #e63946; }
-
-        /* تنسيق قسم التقرير الذي سيتم تحويله لـ PDF */
-        #report-content {
-            background-color: white;
-            color: black;
-            padding: 30px;
-            border-radius: 10px;
-            margin-top: 20px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-        }
-
-        .report-header {
-            text-align: center;
-            border-bottom: 2px solid #ccc;
-            padding-bottom: 10px;
-            margin-bottom: 20px;
-        }
-
-        .report-header img {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            margin-bottom: 10px;
-        }
-
-        .report-header h2 {
-            margin: 0;
-            color: var(--primary-blue);
-        }
-
-        .summary-cards {
-            display: flex;
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-
-        .summary-card {
-            flex: 1;
-            background: #f8f9fa;
-            border: 1px solid #dee2e6;
-            padding: 15px;
-            border-radius: 8px;
-            text-align: center;
-        }
-
-        .summary-card h3 {
-            margin: 0 0 10px 0;
-            font-size: 16px;
-            color: #495057;
-        }
-
-        .summary-card .value {
-            font-size: 24px;
-            font-weight: bold;
-            color: var(--primary-orange);
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-        }
-
-        th, td {
-            border: 1px solid #dee2e6;
-            padding: 12px;
-            text-align: right;
-        }
-
-        th {
-            background-color: var(--primary-blue);
-            color: white;
-        }
-
-        tr:nth-child(even) {
-            background-color: #f8f9fa;
-        }
-
-        .loading {
-            text-align: center;
-            color: var(--primary-orange);
-            font-size: 18px;
-            margin-top: 50px;
-        }
+        
+        #report-content { background-color: white; color: black; padding: 30px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        .report-header { text-align: center; border-bottom: 2px solid #ccc; padding-bottom: 10px; margin-bottom: 20px; }
+        .report-header img { width: 80px; height: 80px; border-radius: 50%; margin-bottom: 10px; }
+        .summary-cards { display: flex; gap: 20px; margin-bottom: 20px; }
+        .summary-card { flex: 1; background: #f8f9fa; border: 1px solid #dee2e6; padding: 15px; border-radius: 8px; text-align: center; }
+        .summary-card .value { font-size: 24px; font-weight: bold; color: var(--primary-orange); }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #dee2e6; padding: 12px; text-align: right; }
+        th { background-color: var(--primary-blue); color: white; }
+        tr:nth-child(even) { background-color: #f8f9fa; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <h1>لوحة المالك - الإحصائيات</h1>
+        <h1>إحصائيات الإدارة</h1>
         <div class="controls">
+            <!-- الفلاتر الزمنية الجديدة -->
+            <select id="time-filter" onchange="loadReport()">
+                <option value="today">مبيعات اليوم</option>
+                <option value="week">مبيعات هذا الأسبوع</option>
+                <option value="month">مبيعات هذا الشهر</option>
+            </select>
             <button class="btn btn-pdf" onclick="generatePDF()">تحميل PDF</button>
             <button class="btn btn-logout" onclick="logout()">خروج</button>
         </div>
     </div>
 
-    <div id="loading" class="loading">جاري جلب بيانات اليوم...</div>
-
-    <!-- هذا القسم بأكمله سيتم تصويره وتحويله إلى ملف PDF -->
-    <div id="report-content" style="display: none;">
+    <div id="report-content">
         <div class="report-header">
-            <!-- استدعاء الشعار في التقرير -->
             <img src="1000065786.png" alt="شعار دنيا">
             <h2>محطة دنيا للوقود</h2>
-            <p id="report-date"></p>
+            <p id="report-date-text">جاري التحميل...</p>
         </div>
 
         <div class="summary-cards">
             <div class="summary-card">
-                <h3>إجمالي المبيعات (ل.س)</h3>
+                <h3>إجمالي الإيرادات (ل.س)</h3>
                 <div class="value" id="total-amount">0</div>
             </div>
             <div class="summary-card">
-                <h3>إجمالي الكمية المباعة (لتر)</h3>
+                <h3>إجمالي الكمية (لتر)</h3>
                 <div class="value" id="total-liters">0</div>
             </div>
         </div>
 
-        <h3>تفاصيل مبيعات العدادات (اليوم)</h3>
+        <h3>تفاصيل الإحصائية للعدادات</h3>
         <table>
             <thead>
                 <tr>
-                    <th>العداد</th>
-                    <th>القراءة السابقة</th>
-                    <th>القراءة الحالية</th>
-                    <th>الكمية (لتر)</th>
-                    <th>الإجمالي (ل.س)</th>
+                    <th>العداد / المادة</th>
+                    <th>إجمالي الكمية (لتر)</th>
+                    <th>إجمالي الإيرادات (ل.س)</th>
                 </tr>
             </thead>
-            <tbody id="table-body">
-                <!-- سيتم تعبئة الجدول برمجياً -->
-            </tbody>
+            <tbody id="table-body"></tbody>
         </table>
     </div>
 
     <script>
-        // حماية الشاشة للمالك فقط
-        if(localStorage.getItem('userRole') !== 'owner') {
-            window.location.href = 'index.html';
-        }
+        if(localStorage.getItem('userRole') !== 'owner') window.location.href = 'index.html';
 
-        // إعدادات فايربيس (تم تضمين إعداداتك الحقيقية)
         const firebaseConfig = {
           apiKey: "AIzaSyBRCEBXzSNr6Pb2YGJlHcf70sM16QVAbhI",
           authDomain: "donea-d13db.firebaseapp.com",
@@ -213,106 +90,99 @@
           messagingSenderId: "797815045696",
           appId: "1:797815045696:web:f177acddbf214ca10569a5"
         };
-
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        // تحديد تاريخ اليوم
-        const todayStr = new Date().toISOString().split('T')[0];
-        document.getElementById('report-date').innerText = "تقرير يوم: " + todayStr;
+        function loadReport() {
+            const filter = document.getElementById('time-filter').value;
+            const now = new Date();
+            const todayStr = now.toISOString().split('T')[0];
+            const currentMonthStr = todayStr.substring(0, 7); // YYYY-MM
+            
+            // تحديد بداية الأسبوع (الأحد كبداية)
+            const firstDayOfWeek = new Date(now.setDate(now.getDate() - now.getDay())).toISOString().split('T')[0];
+            
+            let dateText = "";
+            if(filter === 'today') dateText = "تقرير يوم: " + todayStr;
+            else if(filter === 'week') dateText = "تقرير الأسبوع بدءاً من: " + firstDayOfWeek;
+            else if(filter === 'month') dateText = "تقرير شهر: " + currentMonthStr;
+            
+            document.getElementById('report-date-text').innerText = dateText;
+            document.getElementById('table-body').innerHTML = '<tr><td colspan="3" style="text-align:center;">جاري المعالجة...</td></tr>';
 
-        // جلب البيانات
-        function fetchTodayData() {
-            db.ref(`daily_logs/${todayStr}`).once('value').then((snapshot) => {
-                document.getElementById('loading').style.display = 'none';
-                document.getElementById('report-content').style.display = 'block';
+            // جلب أسماء العدادات والمواد
+            Promise.all([db.ref('meters').once('value'), db.ref('settings/fuel_types').once('value'), db.ref('daily_logs').once('value')])
+            .then(snapshots => {
+                const metersData = snapshots[0].val() || {};
+                const fuelData = snapshots[1].val() || {};
+                const allLogs = snapshots[2].val() || {};
+                
+                let grandLiters = 0;
+                let grandAmount = 0;
+                
+                // مصفوفة لتجميع حسابات كل عداد
+                const aggregatedMeters = {};
 
-                if (!snapshot.exists()) {
-                    document.getElementById('table-body').innerHTML = '<tr><td colspan="5" style="text-align:center;">لا توجد مبيعات مسجلة لهذا اليوم حتى الآن.</td></tr>';
-                    return;
+                // تصفية الأيام حسب الفلتر
+                for (const dateKey in allLogs) {
+                    let inRange = false;
+                    if(filter === 'today' && dateKey === todayStr) inRange = true;
+                    if(filter === 'week' && dateKey >= firstDayOfWeek && dateKey <= todayStr) inRange = true;
+                    if(filter === 'month' && dateKey.startsWith(currentMonthStr)) inRange = true;
+
+                    if (inRange) {
+                        const dayLogs = allLogs[dateKey];
+                        for (const meterId in dayLogs) {
+                            if(!aggregatedMeters[meterId]) aggregatedMeters[meterId] = { liters: 0, amount: 0 };
+                            for (const logId in dayLogs[meterId]) {
+                                const log = dayLogs[meterId][logId];
+                                aggregatedMeters[meterId].liters += log.quantity_sold;
+                                aggregatedMeters[meterId].amount += log.total_amount;
+                            }
+                        }
+                    }
                 }
 
-                let grandTotalAmount = 0;
-                let grandTotalLiters = 0;
+                // رسم الجدول النهائي
                 const tbody = document.getElementById('table-body');
-                tbody.innerHTML = ''; // تفريغ الجدول
-
-                const logsByMeter = snapshot.val();
+                tbody.innerHTML = '';
                 
-                // جلب أسماء العدادات لتوضيحها في التقرير
-                db.ref('meters').once('value').then((meterSnap) => {
-                    const metersInfo = meterSnap.val();
-
-                    // المرور على كل عداد ومبيعاته اليومية
-                    for (const meterId in logsByMeter) {
-                        const meterLogs = logsByMeter[meterId];
-                        let meterTotalLiters = 0;
-                        let meterTotalAmount = 0;
-                        let firstReading = null;
-                        let lastReading = null;
+                if(Object.keys(aggregatedMeters).length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;">لا توجد مبيعات في هذه الفترة المحددة.</td></tr>';
+                } else {
+                    for (const meterId in aggregatedMeters) {
+                        const mData = aggregatedMeters[meterId];
+                        const mName = metersData[meterId] ? metersData[meterId].name : meterId;
+                        const fName = (metersData[meterId] && fuelData[metersData[meterId].fuel_type_id]) ? fuelData[metersData[meterId].fuel_type_id].name : '';
                         
-                        const meterName = metersInfo[meterId] ? metersInfo[meterId].name : meterId;
-
-                        // جمع فواتير هذا العداد لليوم
-                        for (const logId in meterLogs) {
-                            const log = meterLogs[logId];
-                            if(firstReading === null) firstReading = log.start_reading; // قراءة الصباح
-                            lastReading = log.end_reading; // آخر قراءة وصلت
-                            
-                            meterTotalLiters += log.quantity_sold;
-                            meterTotalAmount += log.total_amount;
-                        }
-
-                        grandTotalLiters += meterTotalLiters;
-                        grandTotalAmount += meterTotalAmount;
-
-                        // إضافة سطر العداد في الجدول
-                        const tr = document.createElement('tr');
-                        tr.innerHTML = `
-                            <td>${meterName}</td>
-                            <td>${firstReading}</td>
-                            <td>${lastReading}</td>
-                            <td>${meterTotalLiters}</td>
-                            <td>${meterTotalAmount.toLocaleString()}</td>
-                        `;
-                        tbody.appendChild(tr);
+                        grandLiters += mData.liters;
+                        grandAmount += mData.amount;
+                        
+                        tbody.innerHTML += `<tr>
+                            <td>${mName} (${fName})</td>
+                            <td>${mData.liters}</td>
+                            <td>${mData.amount.toLocaleString()}</td>
+                        </tr>`;
                     }
-
-                    // تحديث المربعات العلوية
-                    document.getElementById('total-liters').innerText = grandTotalLiters;
-                    document.getElementById('total-amount').innerText = grandTotalAmount.toLocaleString();
-                });
-
-            }).catch(error => {
-                alert("حدث خطأ أثناء جلب البيانات: " + error.message);
+                }
+                document.getElementById('total-liters').innerText = grandLiters;
+                document.getElementById('total-amount').innerText = grandAmount.toLocaleString();
             });
         }
 
-        // دالة توليد الـ PDF
         function generatePDF() {
             const element = document.getElementById('report-content');
-            
-            // إعدادات ملف الـ PDF
+            const dateStr = new Date().toISOString().split('T')[0];
             const opt = {
-                margin:       10,
-                filename:     `تقرير_محطة_دنيا_${todayStr}.pdf`,
-                image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { scale: 2, useCORS: true }, // useCORS مهمة لتحميل الشعار
-                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                margin: 10, filename: `إحصائيات_دنيا_${dateStr}.pdf`, image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
             };
-
-            // تحويل وتنزيل الملف
             html2pdf().set(opt).from(element).save();
         }
 
-        // تسجيل الخروج
-        function logout() {
-            localStorage.removeItem('userRole');
-            window.location.href = 'index.html';
-        }
-
-        // بدء التنفيذ
-        fetchTodayData();
+        function logout() { localStorage.removeItem('userRole'); window.location.href = 'index.html'; }
+        
+        loadReport(); // تحميل تقرير اليوم عند فتح الشاشة
     </script>
 </body>
 </html>
