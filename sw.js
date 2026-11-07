@@ -1,27 +1,30 @@
-const CACHE_NAME = 'donea-app-v1';
-const urlsToCache = [
-  './',
-  './index.html',
-  './admin-panel.html',
-  './owner-dashboard.html',
-  './icon.png',
-  './1000065786.png'
-];
+const CACHE_NAME = 'donea-app-v2';
 
-// تثبيت ملفات التطبيق في ذاكرة الهاتف
+// التثبيت الفوري وتجاوز النسخة العالقة
 self.addEventListener('install', event => {
+  self.skipWaiting();
+});
+
+// مسح جميع الكاشات القديمة فوراً
+self.addEventListener('activate', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => {
-      return cache.addAll(urlsToCache);
-    })
+    caches.keys().then(keys => Promise.all(
+      keys.map(key => {
+        if (key !== CACHE_NAME) return caches.delete(key);
+      })
+    )).then(() => self.clients.claim())
   );
 });
 
-// استدعاء الملفات من الذاكرة لسرعة الفتح
+// جلب أحدث كود من الإنترنت دائماً، واستخدام الذاكرة فقط عند انقطاع الشبكة
 self.addEventListener('fetch', event => {
   event.respondWith(
-    caches.match(event.request).then(response => {
-      return response || fetch(event.request);
-    })
+    fetch(event.request)
+      .then(response => {
+        const resClone = response.clone();
+        caches.open(CACHE_NAME).then(cache => cache.put(event.request, resClone));
+        return response;
+      })
+      .catch(() => caches.match(event.request))
   );
 });
